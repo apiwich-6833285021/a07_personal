@@ -5,11 +5,21 @@ interface VenueDetail {
   picture: string;
 }
 
-const VENUE_DATA: Record<string, VenueDetail> = {
-  "001": { name: "The Bloom Pavilion", picture: "/img/bloom.jpg" },
-  "002": { name: "Spark Space", picture: "/img/spark.jpg" },
-  "003": { name: "The Grand Table", picture: "/img/grandtable.jpg" },
-};
+async function getVenue(vid: string): Promise<VenueDetail | null> {
+  try {
+    const res = await fetch(
+      `https://a08-venue-explorer-backend.vercel.app/api/v1/venues/${vid}`,
+      { cache: "no-store" }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    const v = data?.data ?? data;
+    if (!v?.name) return null;
+    return { name: v.name, picture: v.picture };
+  } catch {
+    return null;
+  }
+}
 
 export default async function VenueDetailPage({
   params,
@@ -17,10 +27,14 @@ export default async function VenueDetailPage({
   params: Promise<{ vid: string }>;
 }) {
   const { vid } = await params;
-  const venue = VENUE_DATA[vid];
+  const venue = await getVenue(vid);
 
   if (!venue) {
-    return <main className="min-h-screen p-8"><p>Venue not found</p></main>;
+    return (
+      <main className="min-h-screen p-8">
+        <p>Venue not found</p>
+      </main>
+    );
   }
 
   return (
